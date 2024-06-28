@@ -24,8 +24,7 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
 
 resource "aws_elb" "web_elb" {
   name               = "web-elb"
-  availability_zones = data.aws_availability_zones.available.names
-  subnets            = var.subnets
+  availability_zones = ["us-east-1a"]
   security_groups    = [aws_security_group.web_sg.id]
 
   listener {
@@ -43,7 +42,7 @@ resource "aws_elb" "web_elb" {
     unhealthy_threshold = 2
   }
 
-  instances                   = [aws_instance.web_instance.id]
+
   cross_zone_load_balancing   = true
   idle_timeout                = 400
   connection_draining         = true
@@ -52,9 +51,9 @@ resource "aws_elb" "web_elb" {
 
 resource "aws_autoscaling_group" "web_asg" {
   launch_configuration = aws_launch_configuration.web_lc.id
-  min_size             = 1
-  max_size             = 3
-  desired_capacity     = 1
+  min_size             = 2
+  max_size             = 5
+  desired_capacity     = 2
   vpc_zone_identifier  = var.subnets
 
   tag {
