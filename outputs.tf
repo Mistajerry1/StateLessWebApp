@@ -1,5 +1,5 @@
 output "elb_dns_name" {
-  value = aws_elb.web_elb.dns_name
+  value = aws_lb.web_alb.dns_name
 }
 
 output "route53_record_name" {

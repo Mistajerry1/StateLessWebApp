@@ -22,31 +22,25 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
 
-resource "aws_elb" "web_elb" {
-  name               = "web-elb"
-  availability_zones = ["us-east-1a"]
+resource "aws_lb" "web_alb" {
+  name               = "weblb"
+  internal           = false
+  load_balancer_type = "application"
   security_groups    = [aws_security_group.web_sg.id]
+  subnets            = var.subnets
 
-  listener {
-    instance_port     = 80
-    instance_protocol = "HTTP"
-    lb_port           = 80
-    lb_protocol       = "HTTP"
+  enable_deletion_protection = false
+}
+
+resource "aws_lb_listener" "web_listener" {
+  load_balancer_arn = aws_lb.web_alb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
   }
-
-  health_check {
-    target              = "HTTP:80/"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-
-
-  cross_zone_load_balancing   = true
-  idle_timeout                = 400
-  connection_draining         = true
-  connection_draining_timeout = 400
 }
 
 resource "aws_autoscaling_group" "web_asg" {
@@ -119,8 +113,8 @@ resource "aws_route53_record" "www" {
   type    = "A"
 
   alias {
-    name                   = aws_elb.web_elb.dns_name
-    zone_id                = aws_elb.web_elb.zone_id
+    name                   = aws_lb.web_alb.dns_name
+    zone_id                = aws_lb.web_alb.zone_id
     evaluate_target_health = true
   }
 }
